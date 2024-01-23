@@ -4,6 +4,10 @@ builder.Services.AddModels(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<BlockchainDbContext>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -12,13 +16,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
 
+app.MapHealthChecks("/healthz");
 app.MapGet("/weatherforecast", () =>
     {
         var forecast = Enumerable.Range(1, 5).Select(index =>

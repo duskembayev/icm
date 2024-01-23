@@ -30,9 +30,7 @@ public static class SetupExtensions
         if (options.Value.RestoreTimeout > TimeSpan.Zero)
             await Task.Delay(options.Value.RestoreTimeout);
 
-        if (await dbContext.Database.EnsureCreatedAsync())
-            return;
-
+        await dbContext.Database.EnsureCreatedAsync();
         await dbContext.Database.MigrateAsync();
     }
 }
