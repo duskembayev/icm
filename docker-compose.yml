@@ -6,7 +6,7 @@ services:
       context: .
       target: api
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1/healthz"]
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1/healthz" ]
     ports:
       - "8080:80"
     depends_on:
@@ -16,6 +16,22 @@ services:
       ASPNETCORE_URLS: "http://+:80"
       CONNECTIONSTRINGS:blockchaindb: "Server=db;Port=5432;Database=blockchaindb;User Id=postgres;Password=fh6Dj01s"
       Database__Blockchain__RestoreTimeout: "00:00:10"
+  
+  fetcher:
+    build:
+      context: .
+      target: fetcher
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1/healthz" ]
+    ports:
+      - "8090:80"
+    depends_on:
+      - db
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ASPNETCORE_URLS: "http://+:80"
+      CONNECTIONSTRINGS:blockchaindb: "Server=db;Port=5432;Database=blockchaindb;User Id=postgres;Password=fh6Dj01s"
+      Blockcypher__StartupDelay: "00:00:20"
 
   db:
     image: postgres:alpine
