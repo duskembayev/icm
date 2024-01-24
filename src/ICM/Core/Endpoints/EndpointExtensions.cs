@@ -6,9 +6,6 @@ public static class EndpointExtensions
     {
         var endpoints = @this.Services.GetServices<IEndpoint>();
 
-        foreach (var endpoint in endpoints)
-        {
-            endpoint.Map(@this);
-        }
+        foreach (var endpoint in endpoints) endpoint.Map(@this);
     }
 }

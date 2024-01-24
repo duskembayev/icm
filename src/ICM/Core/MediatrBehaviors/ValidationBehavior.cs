@@ -9,9 +9,7 @@ public class ValidationBehavior<TRequest, TResponse>(IValidator<TRequest>? valid
         CancellationToken cancellationToken)
     {
         if (validator is not null)
-        {
             await validator.ValidateAsync(request, strategy => strategy.ThrowOnFailures(), cancellationToken);
-        }
 
         return await next();
     }

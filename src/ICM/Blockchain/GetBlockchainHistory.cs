@@ -1,6 +1,5 @@
 ﻿using System.Net.Mime;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -36,10 +35,7 @@ public static class GetBlockchainHistory
 
                         writer.WriteStartArray();
 
-                        foreach (var rawJson in data)
-                        {
-                            writer.WriteRawValue(rawJson);
-                        }
+                        foreach (var rawJson in data) writer.WriteRawValue(rawJson);
 
                         writer.WriteEndArray();
                     }, MediaTypeNames.Application.Json);
