@@ -1,7 +1,4 @@
 ﻿using System.Net.Mime;
-using FluentValidation;
-using ICM.Core.Endpoints;
-using MediatR;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,17 +7,17 @@ namespace ICM.Blockchain;
 
 public static class GetBlockchainInfo
 {
-    public record Request(string Slug) : IRequest<byte[]?>;
+    public record Request(string BlockchainName) : IRequest<byte[]?>;
 
     public class Endpoint : IEndpoint
     {
         public RouteHandlerBuilder Map(IEndpointRouteBuilder builder)
         {
             return builder
-                .MapGet("/blockchain/{slug}", async Task<Results<IResult, NotFound>>
-                    ([FromRoute] string slug, [FromServices] IMediator mediator, CancellationToken cancellationToken) =>
+                .MapGet("/blockchain/{name}", async Task<Results<IResult, NotFound>>
+                    ([FromRoute] string name, [FromServices] IMediator mediator, CancellationToken cancellationToken) =>
                 {
-                    var data = await mediator.Send(new Request(slug), cancellationToken);
+                    var data = await mediator.Send(new Request(name), cancellationToken);
 
                     return data is null
                         ? TypedResults.NotFound()
@@ -34,7 +31,7 @@ public static class GetBlockchainInfo
     {
         public Validator()
         {
-            RuleFor(m => m.Slug)
+            RuleFor(m => m.BlockchainName)
                 .NotEmpty()
                 .MaximumLength(10);
         }
@@ -44,10 +41,10 @@ public static class GetBlockchainInfo
     {
         public async Task<byte[]?> Handle(Request request, CancellationToken cancellationToken)
         {
-            var slug = request.Slug.ToLowerInvariant();
+            var name = request.BlockchainName.ToLowerInvariant();
 
             return await dbContext.BlockchainInfos
-                .Where(m => m.Name == slug)
+                .Where(m => m.Name == name)
                 .OrderByDescending(m => m.CreatedAt)
                 .Select(m => m.Data)
                 .FirstOrDefaultAsync(cancellationToken);
