@@ -1,8 +1,23 @@
+using System.Reflection;
+using FluentValidation;
+using ICM.Blockchain;
+using ICM.Core.Endpoints;
+
+var thisAssembly = Assembly.GetExecutingAssembly();
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddModels(builder.Configuration);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddModels(builder.Configuration);
+builder.Services.AddBlockchain();
+
+builder.Services.AddValidatorsFromAssembly(thisAssembly);
+builder.Services.AddMediatR(c =>
+{
+    c.RegisterServicesFromAssembly(thisAssembly);
+});
+
 
 builder.Services
     .AddHealthChecks()
@@ -16,31 +31,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
 app.MapHealthChecks("/healthz");
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast")
-    .WithOpenApi();
+app.MapEndpoints();
 
 await app.Services.RestoreDatabaseAsync();
 await app.RunAsync();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int) (TemperatureC / 0.5556);
-}
