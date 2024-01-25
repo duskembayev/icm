@@ -4,29 +4,29 @@ namespace ICM.Fetcher;
 
 public class BlockcypherFetchWorker
 {
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly BlockchainDbContext _dbContext;
+    private readonly IBlockcypherClient _client;
     private readonly ILogger<BlockcypherFetchWorker> _logger;
 
-    public BlockcypherFetchWorker(IHttpClientFactory httpClientFactory, BlockchainDbContext dbContext, ILogger<BlockcypherFetchWorker> logger)
+    public BlockcypherFetchWorker(BlockchainDbContext dbContext, IBlockcypherClient client,
+        ILogger<BlockcypherFetchWorker> logger)
     {
-        _httpClientFactory = httpClientFactory;
         _dbContext = dbContext;
+        _client = client;
         _logger = logger;
     }
-    
+
     public async Task RunAsync(BlockcypherChainOptions options, CancellationToken cancellationToken)
     {
         using var _ = _logger.BeginScope("Chain: {ChainName}", options.Name);
-        var httpClient = _httpClientFactory.CreateClient(HttpClientNames.Blockcypher);
 
         _logger.LogInformation("Starting fetch loop for chain {ChainName}", options.Name);
-        
+
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                await ExecuteCore(options.Name, options.Url, httpClient, cancellationToken);
+                await ExecuteCore(options.Name, options.Url, cancellationToken);
             }
             catch (HttpRequestException e) when (e.StatusCode == HttpStatusCode.TooManyRequests)
             {
@@ -38,22 +38,24 @@ public class BlockcypherFetchWorker
                 throw;
             }
 
-            await Task.Delay(options.Interval * 2, cancellationToken);
+            await Task.Delay(options.Interval, cancellationToken);
         }
-        
+
         _logger.LogInformation("Fetch loop for chain {ChainName} has been cancelled", options.Name);
     }
 
-    private async ValueTask ExecuteCore(string name, string url, HttpClient httpClient, CancellationToken cancellationToken)
+    private async ValueTask ExecuteCore(string name, string url, CancellationToken cancellationToken)
     {
-        var data = await httpClient.GetByteArrayAsync(url, cancellationToken);
+        var timestamp = TimeProvider.System.GetUtcNow();
+        var data = await _client.DownloadAsync(url, cancellationToken);
+
         _logger.LogDebug("Fetched data for chain {ChainName}: {Bytes} bytes", name, data.Length);
 
         _dbContext.BlockchainInfos.Add(new BlockchainInfo
         {
             Name = name,
             Data = data,
-            CreatedAt = TimeProvider.System.GetUtcNow()
+            CreatedAt = timestamp
         });
 
         await _dbContext.SaveChangesAsync(cancellationToken);

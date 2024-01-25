@@ -3,16 +3,16 @@ using ICM.Fetcher;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddModels(builder.Configuration);
-
 builder.Services.AddOptions<BlockcypherFetchOptions>().BindConfiguration("Blockcypher");
 builder.Services.AddSingleton<BlockcypherFetchHealth>();
 builder.Services.AddHostedService<BlockcypherFetchService>();
 builder.Services.AddTransient<BlockcypherFetchWorker>();
+builder.Services.AddTransient<IBlockcypherClient, BlockcypherClient>();
 
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<BlockchainDbContext>()
-    .AddCheck<BlockcypherFetchHealth>("BlockcypherFetch");
+    .AddCheck<BlockcypherFetchHealth>(nameof(BlockcypherFetchHealth));
 
 builder.Services.AddHttpClient(HttpClientNames.Blockcypher, (provider, client) =>
 {
